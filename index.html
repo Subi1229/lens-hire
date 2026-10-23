@@ -4160,6 +4160,7 @@ R.status=()=>{const x=sel(),fn=first(x.name),j=jobOf(x);
 </div>
   </div></div></section>`;};
 
+function devTz(){try{const z=Intl.DateTimeFormat().resolvedOptions().timeZone||'';return /Kolkata|Calcutta/.test(z)?'IST':z==='Asia/Dubai'||z==='Asia/Muscat'?'GST':z==='Asia/Singapore'?'SGT':z==='Europe/London'?'GMT':null;}catch(_){return null;}}
 R.cbook=()=>{const prev=state.bookPreview;const x=sel(),fn=first(x.name);
   const iv=prev?{panel:state.sched.panel,len:state.sched.len,slot:null}:x.interview;
   if(!prev&&(!iv||x.stage!=='interview')){
@@ -4176,7 +4177,7 @@ R.cbook=()=>{const prev=state.bookPreview;const x=sel(),fn=first(x.name);
     <div class="row"><button class="btn" data-act="pedit">${bl('Change time')}</button><button class="btn primary" data-act="addcal">${ic('i-cal')}${bl('Add to calendar')}</button></div>`;}
   else{const L=iv.len||60;const days=offered(iv).filter(d=>slotsAv(iv.panel,d,L,iv.avoid).length).map(d=>({d}));let pd=pk.day||iv.suggestDay||(pk.edit&&iv.slot&&iv.slot.d)||(days[0]&&days[0].d);if(!pk.day&&pd&&!days.some(d=>d.d===pd))pd=days[0]&&days[0].d;const hs=pd?slotsAv(iv.panel,pd,L,iv.avoid):[];
     body=`${!prev&&iv.moved?`<div class="ybar"><span class="pill">Moved</span><span>Neha moved your interview: <b>${esc(iv.moved.why.toLowerCase())}</b>. ${iv.suggestDay?`Pick a time on ${dLab(iv.suggestDay)}, or another day.`:''}</span></div>`:''}${pk.edit?`<div class="ybar"><span class="pill">Now</span><span>${slotLabel(iv.slot)}. Pick a new time and the panel's calendars update.</span></div>`:''}
-      ${dayRow('pday',iv,iv.panel,L,{sel:pd,only:true,cal:false,head:'Pick a day',avoid:iv.avoid})}<div class="tzrow"><span class="xs muted">Times in</span>${Object.keys(TZ).map(z=>`<button class="chip sm" data-act="ctz" data-z="${z}" aria-pressed="${(state.ctz||'IST')===z}">${TZ[z][1]} · ${z}</button>`).join('')}</div>
+      ${dayRow('pday',iv,iv.panel,L,{sel:pd,only:true,cal:false,head:'Pick a day',avoid:iv.avoid})}${(()=>{const dz=devTz(),cz=state.ctz||'IST';return `<div class="tzrow"><span class="xs muted">Times in ${cz}</span>${dz&&dz!=='IST'?`<button class="chip sm" data-act="ctz" data-z="${cz==='IST'?dz:'IST'}">${cz==='IST'?'Show in '+dz:'Show in IST'}</button>`:''}</div>`;})()}
       <div class="slots">${hs.map(h=>`<button class="chip" data-act="ph" data-d="${pd}" data-h="${h}" aria-pressed="${pk.day===pd&&pk.h===h}">${(state.ctz||'IST')==='IST'?tr(h,L):inTz(h,state.ctz,L)}</button>`).join('')||'<span class="small muted">No free times. Ask Neha for more.</span>'}</div>
       <div class="card stack"><b class="small">You'll meet</b><p class="small muted">${iv.panel.map(p=>`${P[p].n}, ${P[p].r.toLowerCase()}`).join(' · ')||'Panel not chosen yet'}</p></div>
       ${prev?'':`<div class="card stack"><b class="small">${esc(roundOf(x).name)} · how to prepare</b><p class="small muted">${esc(roundOf(x).prep||'Nothing special.')}</p>${(roundOf(x).ex||[]).length?`<p class="xs muted">Practise with: ${roundOf(x).ex.map(esc).join(' · ')}</p>`:''}</div>`}`;}
@@ -5099,7 +5100,7 @@ document.addEventListener('click',e=>{
     case 'exrm':{const f=b.dataset.for,o=ctxOf(f);o.ex=(o.ex||[]).filter(z=>z!==+b.dataset.d);return calRefresh(f);}
     case 'apfix':return fixSheet();
     case 'apfixsave':{const t=($('#apFixText').value||'').trim();if(t.replace(/\s/g,'').length<80)return fieldErr('#apFixText','That’s too short to score. Paste your experience section at least.');const a=state.ap;a.raw=t;a.P=parseResume(t,FAMOF[JOB(a.job).dept]||'design');a.fixed=true;a.exp=a.P.exp||a.exp;a.rexp=a.P.rexp||a.rexp;closeSheet();rerender();return toast(`Updated. Read quality is now ${a.P.q.level.toLowerCase()}.`);}
-    case 'ctz':state.ctz=b.dataset.z;rerender();return toast(`Times now in ${TZ[state.ctz][1]} time (${state.ctz}).`);
+    case 'ctz':state.ctz=b.dataset.z;rerender();return toast(`Times in ${state.ctz}.`);
     case 'callpref':{x.callPref=b.dataset.v;notify('neha',{icon:b.dataset.v==='phone'?'i-phone':'i-video',title:`${first(x.name)} prefers a ${b.dataset.v==='phone'?'phone':'video'} call`,sub:`${rlab(x)} · ${slotLabel(x.interview.slot)||'not booked yet'}${b.dataset.v==='phone'?' · '+ansOf(x).phone:''}`,v:'cand',vid:x.id,kind:'candidate'});addLog('comms',`${x.name} chose a ${b.dataset.v} call for the recruiter call`,{who:x.name});rerender();return toast(b.dataset.v==='phone'?`Neha will call ${ansOf(x).phone}.`:'You’ll get a video link.');}
     case 'settheme':{THEME=b.dataset.v;try{localStorage.setItem('lensTheme',THEME);}catch(_){}applyTheme();rerender();return toast(THEME==='system'?'Following your device':THEME==='light'?'Light appearance':'Dark appearance');}
     case 'undo':{const f=state.undoFn;state.undoFn=null;if(f)f();return toast('Undone.');}

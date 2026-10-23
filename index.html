@@ -2433,7 +2433,7 @@ R.home=()=>{
   const nOffer=C.filter(x=>x.stage==='offer'&&x.offer.status==='sent').length;
   const nNew=C.filter(isNew).length;
   return `<section class="view has-head"><div class="head">
-    <div class="datebar"><h1>Fri <i></i></h1><div class="row nowrap"><p>October 16<br>2026</p>${bellBtn('notifs')}<button class="cbtn" data-act="profile" aria-label="Profile" style="background:var(--lime);color:var(--lime-ink);font-weight:600;font-size:13px">${initials(ME().n)}</button><button class="cbtn protom" data-act="proto" aria-label="Prototype menu: switch side, look, sizes, jump to a screen">${ic('i-more')}</button></div></div>
+    <div class="datebar"><h1>Fri <i></i></h1><div class="row nowrap">${bellBtn('notifs')}<button class="cbtn" data-act="profile" aria-label="Profile" style="background:var(--lime);color:var(--lime-ink);font-weight:600;font-size:13px">${initials(ME().n)}</button><button class="cbtn protom" data-act="proto" aria-label="Prototype menu: switch side, look, sizes, jump to a screen">${ic('i-more')}</button></div></div>
     ${ROLE()==='int'?(()=>{const mine=C.filter(x=>x.interview&&x.interview.panel.includes(state.me)&&['interview','debrief'].includes(x.stage));const due=mine.filter(x=>x.stage==='interview'&&x.interview.slot&&!(x.cards||{})[state.me]).length;
       return `<p class="say">Morning, <b>${first(ME().n)}.</b> You're on <b>${mine.length} interview${mine.length===1?'':'s'}</b>, ${ic('i-clip','ico')} <b>${due} scorecard${due===1?'':'s'}</b> due from you.</p>`;})()
     :`<p class="say">Morning, <b>${first(ME().n)}.</b> <span class="ipill">${nNew} new</span> already ranked, ${ic('i-clip','ico')} <b>${nScore} scorecard${nScore===1?'':'s'}</b>, ${ic('i-rupee','ico')} <b>${nOffer} offer${nOffer===1?'':'s'}</b> pending.</p>`}</div>
@@ -3571,9 +3571,12 @@ const expOf=r=>{const m=String(r.exp||'').match(/(\d+)\D+(\d+)/);return m?[+m[1]
 const coOf=r=>COS().find(c=>c.id===r.co);
 /* share of decided applicants who heard back within the promised days, last 90 days. Nimbus is computed from real records. */
 function keptOf(c){if(c.id!=='nimbus')return {kept:92,ember:71,bright:88,pebble:58,arc:80,kite:92}[c.id]||80;const d=C.filter(x=>(x.job||'pd2')==='pd2'&&decided(x));return d.length?Math.round(d.filter(x=>replyState(x)==='ontime').length/d.length*100):100;}
+const QALIAS={bangalore:'bengaluru',blr:'bengaluru',bombay:'mumbai',gurgaon:'gurugram',ggn:'gurugram','new delhi':'delhi',ncr:'delhi',poona:'pune',madras:'chennai',calcutta:'kolkata',wfh:'remote','work from home':'remote','on-site':'onsite','on site':'onsite',ux:'design',ui:'design',pm:'product',eng:'engineer'};
+function qNorm(q){q=' '+q.toLowerCase().replace(/[^a-z0-9+#.\s-]/g,' ').replace(/\s+/g,' ')+' ';Object.keys(QALIAS).sort((a,b)=>b.length-a.length).forEach(k=>{q=q.split(' '+k+' ').join(' '+QALIAS[k]+' ');});return q.trim();}
+function qMatch(r,c,q){if(!q)return true;const hay=qNorm([r.t,c.name,r.dept,r.loc,r.type,c.ind,RCAT(r)].join(' '));return qNorm(q).split(' ').filter(Boolean).every(t=>hay.includes(t));}
 function rolesFiltered(f){f=f||state.df;const q=f.q.trim().toLowerCase();const XR=f.expR||[0,20],SR=f.salR||[0,60];
   let l=allRoles().filter(r=>{const c=coOf(r),[a,b]=expOf(r);
-  return (!q||r.t.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)||r.dept.toLowerCase().includes(q))&&(f.loc==='Any'||r.loc===f.loc)&&(f.team==='All'||r.dept===f.team)
+  return qMatch(r,c,q)&&(f.loc==='Any'||r.loc===f.loc)&&(f.team==='All'||r.dept===f.team)
     &&(!f.type.length||f.type.includes(r.type))&&(XR[0]<=b&&(XR[1]>=20||XR[1]>=a))
     &&(!(SR[0]>0||SR[1]<60)||(!r.hide&&r.max>=SR[0]&&(SR[1]>=60||r.min<=SR[1])))
     &&(f.posted==='any'||r.days<=+f.posted)&&(!f.cos.length||f.cos.includes(r.co))&&(!(f.fastD)||c.reply<=f.fastD)&&(!f.hideApplied||!(r.real&&applyState(r.id)))
@@ -3802,13 +3805,26 @@ async function handleResume(file){const ap=state.ap;if(!ap||!file)return;if(ap.p
      ap.portNote=null;if(pick){if(P.port&&norm(P.port)!==pick)ap.portNote=`Your résumé shows ${norm(P.port)}, but the link in the file opens ${pick}. We used the link.`;P.port=pick;if(!P.filled.includes('port'))P.filled.push('port');}}
     await new Promise(r=>setTimeout(r,Math.max(0,(REDUCE?0:1400)-(performance.now()-t0))));
     ap.file=file.name;ap.blob=URL.createObjectURL(file);ap.pages=pages;ap.raw=text;ap.P=P;ap.parsing=null;
-    if(text.replace(/\s/g,'').length<80){ap.scanned=true;ap.auto=[];['name','email','phone','li','port','co'].forEach(k=>ap[k]='');ap.city=null;ap.exp=null;ap.rexp=null;ap.humanFirst=true;addLog('ai',`${file.name} had no readable text`,{who:'Résumé reader'});rerender();return toast('No text found. Looks like a scanned image.');}
+    if(text.replace(/\s/g,'').length<80){ap.scanned=true;ap.auto=[];['name','email','phone','li','port','co'].forEach(k=>ap[k]='');ap.city=null;ap.exp=null;ap.rexp=null;ap.humanFirst=true;addLog('ai',`${file.name} had no readable text`,{who:'Résumé reader'});rerender();toast('No text found. It looks like a scan or photo, so it can’t be read. Upload the original PDF or Word file, or fill this in by hand.');return toastHold(8000);}
     ap.scanned=false;['name','email','phone','li','port','co'].forEach(k=>ap[k]=P[k]||'');ap.city=P.city?(['Bengaluru','Mumbai','Delhi NCR','Hyderabad','Pune'].includes(P.city)?P.city:'Other'):null;ap.exp=P.exp||null;ap.rexp=P.rexp||null;ap.rexp=P.rexp||null;
-    ap.auto=P.filled.slice();rerender();toast(`Filled ${ap.auto.length} fields from your résumé. Check them.`);
+    ap.auto=P.filled.slice();rerender();rsFeedback(P,text);
   }catch(e){ap.parsing=null;const n=(e&&e.name)||'',m=(e&&e.message)||'';
     ap.parseErr=m==='old-doc'?'Old .doc files can’t be read. Save it as PDF or DOCX.':m==='type'?'Use a PDF or Word (.docx) file.':n==='PasswordException'||/password/i.test(m)?'This PDF is password-protected. Remove the password and upload again.'
       :n==='InvalidPDFException'||/invalid pdf|corrupt|zip|end of data/i.test(m)?'This file looks damaged. Re-export it and try again.':m==='load'?'Couldn’t load the file reader. Check your connection, or fill in by hand.':'Couldn’t read that file. Try a PDF, or fill in by hand.';
     rerender();toast(ap.parseErr);}}
+function toastHold(ms){const t=$('#toast');if(!t)return;clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms);}
+function rsFeedback(P,text){const KEY=[['name','name'],['email','email'],['phone','phone'],['city','city'],['co','company'],['exp','experience']];
+  const miss=KEY.filter(([k])=>!P[k]).map(([,l])=>l);if(!miss.length){toast(`Filled ${P.filled.length} fields from your résumé. Check them.`);return;}
+  const q=P.q||{},T=text||'',why=[];
+  const words=T.split(/\s+/).filter(Boolean),single=words.filter(w=>w.length===1&&/[a-z]/i.test(w)).length;
+  if(words.length&&single/words.length>0.18)why.push('the text came out broken (common with Canva or browser exports)');
+  if(q.cols)why.push('columns or tables mixed up the lines');
+  if(/\[\s*at\s*\]|\(\s*at\s*\)/i.test(T))why.push('the email is written as “[at]” instead of name@domain.com');
+  else if(!q.contact)why.push('your email or phone is in icons, a header or a footer');
+  if((q.issues||[]).some(i=>/Experience/.test(i)))why.push('there’s no “Experience” heading');
+  if(!q.dates)why.push('there are no job dates like “Mar 2022 – Present”');
+  const list=miss.length>3?miss.slice(0,3).join(', ')+` +${miss.length-3}`:miss.join(', ');
+  toast(`Couldn’t read: ${list}. ${why.length?'Likely '+why[0]+'.':'The layout may be unusual.'} Please fill these in.`);toastHold(8000);}
 const afTag=k=>state.ap&&(state.ap.auto||[]).includes(k)?' <span class="aftag">From résumé</span>':'';
 function autofillCard(){const a=state.ap;
   if(a.parsing)return `<div class="autofill scanning"><span class="tile">${ic('i-doc')}</span><div style="flex:1;min-width:0"><b>Reading ${esc(a.parsing.name)}</b><span class="xs muted afmsg">Pulling out text…</span><span class="afbar"><i></i></span></div></div>`;
@@ -4512,7 +4528,7 @@ R.capps=()=>{if(!state.cAuth)return R.cauth();const x=sel(),j=jobOf(x),o=state.o
       <button class="lrow st" data-act="go" data-v="status"><span class="cotile" style="--c:${o.brand}">${esc(o.name[0]||'N')}</span><div><b>${esc(j.title)}</b><span class="sub"><span class="idot${x.stage==='rejected'?' blink':''}" style="--c:${x.stage==='rejected'?'var(--bad)':x.stage==='hired'||x.stage==='offer'?'var(--good)':x.stage==='interview'?'var(--blue)':'var(--warn)'}"></span>${esc(o.name)} · ${x.roleClosed?'Role closed':CSTAGE[x.stage]}</span></div><span class="t">${hearBy(x)||x.applied}</span>${unread(x)?'<span class="udot"></span>':''}<svg class="chev"><use href="#i-chev"/></svg></button>
       ${EX_APPS.map(a=>`<button class="lrow st" data-act="exapp"><span class="cotile" style="--c:${a.c}">${a.co[0]}</span><div><b>${a.t}<span class="sample">example</span></b><span class="sub"><span class="idot" style="--c:${a.col}"></span>${a.co} · ${a.st}</span></div><span class="t">${a.note}</span><svg class="chev"><use href="#i-chev"/></svg></button>`).join('')}
     </div>
-    <div class="aside stack"><div class="card stack st"><b class="small">Saved résumé</b><div class="fileok" style="background:var(--bg)"><span class="tile">${ic('i-doc')}</span><div><b>${esc(first(x.name).toLowerCase())}-resume.pdf</b><span class="xs muted">Used for every application</span></div></div></div>
+    <div class="aside stack"><div class="card stack st"><b class="small">Saved résumé</b><div class="fileok" style="background:var(--bg)"><span class="tile">${ic('i-doc')}</span><div><b>${esc(first(x.name).toLowerCase())}-resume.pdf</b><span class="xs muted">Used for every application</span></div><button class="btn sm" style="background:var(--card);margin-left:auto;flex:none" data-act="toast" data-t="Updating your résumé from here isn’t in this prototype. You can replace it in Settings.">Update</button></div></div>
       <button class="lrow st" data-act="go" data-v="discover"><span class="tile">${ic('i-bag')}</span><div><b>Find more roles</b></div><svg class="chev"><use href="#i-chev"/></svg></button></div>
   </div></div></section>`;};
 R.csettings=()=>{if(!state.cAuth)return R.cauth();const x=sel(),n=state.cnotif;
@@ -4879,7 +4895,7 @@ function bindInputs(){
   if(st)st.oninput=()=>{$('#setSlug').textContent=slugOf(st.value);};
   {const ds=$('#dsort');if(ds)ds.onchange=()=>{state.df.sort=ds.value;rerender();};}
   {const cq=$('#cq');if(cq)cq.oninput=()=>{state.cq=cq.value;const l=careerRoles();$('#clist').innerHTML=l.map(careerRole).join('')||careerNone();$('#ccount').textContent=l.length;};}
-  {const dq=$('#dq');if(dq)dq.oninput=()=>{state.df.q=dq.value;const l=rolesFiltered();$('#dlist').innerHTML=l.map(roleRow).join('')||'<p class="small muted">No roles match. Try another city or team.</p>';$('#dcount').textContent=l.length;};}
+  {const dq=$('#dq');if(dq)dq.oninput=()=>{state.df.q=dq.value;const l=rolesFiltered();$('#dlist').innerHTML=l.map(roleRow).join('')||'<p class="small muted">No roles match. Try another city or team.</p>';$('#dcount').textContent=l.length;const sw=$('.dtile.swt .dtn');if(sw)sw.textContent=deckList().length;};}
   {const pq=$('#pq');if(pq)pq.oninput=()=>{state.pf.q=pq.value;$('#plist').innerHTML=poolList().map(poolRow).join('')||'<p class="small muted">No one matches.</p>';};}
   {const lq=$('#lq');if(lq)lq.oninput=()=>{state.lf.q=lq.value;const l=logRoles();$('#llist').innerHTML=l.map(logRow).join('')||'<p class="small muted">No roles match.</p>';$('#lcount').textContent=`${l.length} role${l.length===1?'':'s'}`;};}
   {const jq=$('#jq');if(jq)jq.oninput=()=>{state.jf.q=jq.value;const l=jobsFiltered();$('#jlist').innerHTML=l.map(roleCard).join('')||'<p class="small muted">No roles match.</p>';$$('#jlist .funnel i').forEach(el=>el.style.width=el.dataset.w+'%');};}
@@ -5825,5 +5841,15 @@ function barGap(){var H=innerHeight,top=H;document.querySelectorAll('.actions,.p
     var tb=document.getElementById('tabbar'),away=!tb||tb.classList.contains('away')||!tb.getClientRects().length||getComputedStyle(tb).display==='none';
     m.style.bottom=(away?barGap():88)+'px';
     if(last!==state.mode){last=state.mode;var to=state.mode==='recruiter'?'Candidate':'Recruiter';m.classList.toggle('rec',state.mode==='candidate');m.setAttribute('aria-label','Switch to '+to.toLowerCase()+' view');m.innerHTML='<span class="cvdot"></span><span class="lbl">'+to+' view</span>';}},300);})();
+</script>
+<style>.ptag{display:inline-flex;align-items:center;margin-right:8px;padding:3px 7px;border-radius:6px;background:var(--warn-soft);color:var(--warn);font:600 10px/1 var(--f);letter-spacing:.05em;text-transform:uppercase;vertical-align:1px;white-space:nowrap}
+.pnote{background:transparent!important;border:1.5px dashed var(--line);color:var(--muted)}
+.pnote b{color:var(--ink)}
+#toast.proto{border:1.5px dashed var(--warn)!important}
+</style>
+<script>
+/* prototype-only messages: tagged so they aren't read as part of the design */
+(function(){var RE=/prototype|example role|example from another company|only on product designer ii/i,orig=toast;
+  toast=function(m){orig(m);var t=document.getElementById('toast');if(!t)return;var p=RE.test(String(m));t.classList.toggle('proto',p);if(p){t.innerHTML='<span class="ptag">Prototype note</span>';t.appendChild(document.createTextNode(String(m)));}};})();
 </script>
 </html>

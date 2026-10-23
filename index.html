@@ -3644,7 +3644,7 @@ function discFilterSheet(){const f=state.df;state.dfd=deep({type:f.type,expR:f.e
   <div class="row nowrap dffoot"><button class="btn" data-act="dfclear">${bl('Clear all')}</button><button class="btn primary" style="flex:1" data-act="dfapply" id="dfApply">${bl(`Show ${rolesFiltered(Object.assign({},f,state.dfd)).length} roles`)}</button></div>`,'dfsheetx');dfBind();}
 function dfCount(){const b=$('#dfApply');if(b){const n=rolesFiltered(Object.assign({},state.df,state.dfd)).length;b.innerHTML=bl(n?`Show ${n} role${n===1?'':'s'}`:'No roles match');}}
 
-const roleRow=r=>{const c=COS().find(c=>c.id===r.co),k=rKey(r),sv=(state.saved||[]).includes(k),ap=r.real&&applyState(r.id);return `<div class="jrow jcard st" role="button" tabindex="0" data-act="${r.real?'cjobopen':'extrole'}" ${r.real?`data-id="${r.id}"`:`data-co="${r.co}"`}>
+const roleRow=r=>{const c=COS().find(c=>c.id===r.co),k=rKey(r),sv=(state.saved||[]).includes(k),ap=r.real&&applyState(r.id);return `<div class="jrow jcard st" role="button" tabindex="0" data-act="${r.real?'cjobopen':'cxopen'}" ${r.real?`data-id="${r.id}"`:`data-k="${esc(k)}"`}>
   <div class="jch">${coTile(c)}<span class="jco">${esc(c.name)}</span><span class="xs muted jage">${esc(r.age)}</span><button class="jbm" data-act="jsave" data-k="${esc(k)}" aria-pressed="${sv}" aria-label="${sv?'Unsave':'Save'} ${esc(r.t)}">${BMK}</button></div>
   <b class="jt">${esc(r.t)}</b>
   <span class="jmeta">${[r.loc,r.type&&r.type!==r.loc?r.type:'',r.exp?(/yr/.test(r.exp)?r.exp:r.exp+' yrs'):''].filter(Boolean).map(esc).join('<i></i>')}</span>
@@ -3688,7 +3688,7 @@ function deckToast(t){const o=$('#deck');if(!o)return;let e=$('.dtoast',o);if(!e
 function deckUndo(){const h=state.dhist.pop();if(!h)return;const [k,dir]=h,arr=dir>0?state.saved:state.skipped;arr.splice(arr.lastIndexOf(k),1);deckDraw();const c=deckTop();
   if(c&&!REDUCE)c.animate([{transform:`translate(${dir*innerWidth}px,40px) rotate(${dir*24}deg)`},{transform:'none'}],{duration:460,easing:'cubic-bezier(.2,.9,.25,1.1)'});}
 function deckOpenPost(card){card=card||deckTop();if(!card)return;const r=allRoles().find(x=>rKey(x)===card.dataset.k);if(!r)return;
-  if(!r.real){if(!REDUCE)card.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:260});return deckToast(`Full posts: ${state.org.name} only in this prototype`);}
+  if(!r.real){closeDeck(true);state.cx=rKey(r);return go('cxjob');}
   closeDeck(true);state.cjob=r.id;go('cjob');state.fromDeck=true;rerender();}
 function deckClick(e){const b=e.target.closest('[data-dk]');if(!b)return;const a=b.dataset.dk;
   if(a==='close')return closeDeck();if(a==='undo')return deckUndo();if(a==='skip')return deckCommit(-1);if(a==='save')return deckCommit(1);if(a==='open')return deckOpenPost();
@@ -3752,6 +3752,7 @@ R.careers=()=>{const o=state.org,live=JOBS.filter(j=>j.status==='live');const x=
 
 R.cjob=()=>{const draft=state.cjob==='draft';const j=draft?state.je.job:JOB(state.cjob);if(!j)return cEmpty('Role not found','This role is no longer listed.','careers','See open roles');
   const N=jdNeed(j),gth=goodToHave(j);const paused=j.status==='paused';const act=(()=>{const st=!draft&&applyState(j.id);if(st)return `<div class="applied ${st.kind}"><span class="idot${st.kind==='closed'?'':' blink'}" style="--c:${st.kind==='closed'?'var(--bad)':'var(--good)'}"></span><div style="min-width:0"><b>${st.label}</b><span class="xs muted">${st.line}</span></div></div><button class="btn primary" data-act="go" data-v="${st.kind==='closed'?'cfeedback':'status'}" data-id="${st.x.id}">${bl(st.kind==='closed'?'See feedback':'View application')}</button><button class="link xs notyou" data-act="applyother" data-id="${j.id}">Not ${esc(first(st.x.name))}? Apply as someone else</button>`;
+    if(!draft&&!paused&&j.id!=='pd2')return `<button class="btn primary cxoff" data-act="onlypd2" aria-disabled="true">${bl('Apply')}</button><button class="btn lime" data-act="cjobopen" data-id="pd2">${bl('Apply to Product Designer II')}</button>`;
     return `<button class="btn primary" data-act="apply" data-id="${j.id||''}" ${draft||paused?'disabled':''}>${bl(draft?'Preview only':paused?'Applications paused':'Apply')}</button>`;})();
   return `<section class="view has-head has-actions cjobv">${cvbar(true)}<div class="head blue">
     <div class="topnav"><button class="cbtn" ${state.fromDeck?'data-act="deckback"':'data-act="go" data-v="careers"'} aria-label="${state.fromDeck?'Back to swipe':'Back'}"><svg><use href="#i-back"/></svg></button><div class="row nowrap" style="gap:8px">${draft?'<span class="htag">Preview · not published</span>':paused?'<span class="htag">Applications paused</span>':`<span class="htag">${ic('i-clock')}Replies in ${j.reply} days</span>`}${draft||state.mode!=='candidate'?'':(()=>{const k=j.id,sv=(state.saved||[]).includes(k);return `<button class="cbtn jbm" data-act="jsave" data-k="${esc(k)}" aria-pressed="${sv}" aria-label="${sv?'Unsave':'Save'} ${esc(j.title)}">${BMK}</button>`;})()}</div></div>
@@ -3760,6 +3761,7 @@ R.cjob=()=>{const draft=state.cjob==='draft';const j=draft?state.je.job:JOB(stat
     <div class="hdact">${act}</div></div>
   <div class="body"><div class="gside">
     <div class="stack" style="gap:20px">
+      ${!draft&&j.id!=='pd2'&&!applyState(j.id)?`<div class="cxnote">${ic('i-eye')}<span>You can read this role, but applying is open only on <b>Product Designer II</b> in this prototype.</span></div>`:''}
       <p style="font-size:16px;line-height:1.65">${esc(j.desc)}</p>
       ${(j.resp||[]).length?`<h2 class="tt">What you’ll do</h2><div style="margin-top:-10px">${jdUl(j.resp.map(r=>[r]))}</div>`:''}
       <h2 class="tt">What we look for</h2>
@@ -3988,7 +3990,7 @@ function fitSize(){const o=$('#sizer');if(!o)return;const [w,h]=SIZES[state.size
   const d=o.querySelector('.szdev');d.style.transform=`scale(${sc})`;d.style.width=(w+24)+'px';d.style.height=(h+24)+'px';d.style.margin=`${-(h+24)*(1-sc)/2}px ${-(w+24)*(1-sc)/2}px`;}
 const SAMPLE_AP={name:'Riya Sen',email:'riya.sen@gmail.com',phone:'98450 12345',city:'Bengaluru',li:'linkedin.com/in/riyasen',port:'riyasen.design',cases:['riyasen.design/autopay','riyasen.design/merchant-onboarding'],caseRes:['Failed payments down 18%',''],co:'Tiller Pay',exp:'3–5',rexp:'3–5',notice:'30 days',ctype:'Employed',cur:'16',ctc:'22',visa:'No',prev:'No',hear:'LinkedIn',
   rq:'At Tiller Pay I cut the KYC flow from 7 screens to 4 and moved the PAN step after the first payment. Completion went from 58% to 71% in six weeks, and support tickets about KYC dropped by a third.'};
-function startApply(id){const st=applyState(id);if(st){toast(st.kind==='closed'?st.line:`You already applied on ${fmtD(appliedDate(st.x))}. Track it in Applications.`);return go('status',{id:st.x.id});}
+function startApply(id){if(id&&id!=='pd2'&&id!=='draft'){toast('Applying is open only on Product Designer II in this prototype.');state.cjob='pd2';return go('cjob');}const st=applyState(id);if(st){toast(st.kind==='closed'?st.line:`You already applied on ${fmtD(appliedDate(st.x))}. Track it in Applications.`);return go('status',{id:st.x.id});}
 state.ap={job:id,step:0,name:'',email:'',phone:'',cc:'+91',city:null,li:'',port:'',co:'',exp:null,rexp:null,file:null,cover:'',ans:{},notice:null,ctype:'Employed',cur:'',last:'',ctc:'',visa:null,rq:'',prev:null,hear:null,ref:'',gender:null,dis:null,consent:false,pool:true,humanFirst:false,done:null};go('capply');}
 const portReq=j=>j.ko.some(k=>k.id==='port'&&k.on);
 const RQ={pd2:'Tell us about a design decision that moved a number. What changed, and what moved?',fe:'Tell us about a performance problem you fixed. How did you find it?',ux:'Tell us about research that changed a roadmap. What did the team do differently?'};
@@ -5523,6 +5525,9 @@ case 'unsave':{state.saved=(state.saved||[]).filter(k=>k!==b.dataset.k);savedShe
     case 'careset':state.ca.sent=false;return go('cauth',{keepPrev:true});
     case 'caopen':state.cAuth=true;if(state.ca)state.ca.sent=false;go('capps');return toast('Signed in.');
     case 'exapp':return toast('Example from another company on Lens.');
+    case 'cxopen':state.cx=b.dataset.k;return go('cxjob');
+    case 'onlypd2':return toast('Applying is open only on Product Designer II in this prototype.');
+    case 'cxapply':return toast('Example role. Applying works on Product Designer II at Nimbus Pay.');
     case 'cdl':return toast('A copy is on its way to your email.');
     case 'cdelask':state.cdel=true;return rerender();
     case 'cdelno':state.cdel=false;return rerender();
@@ -5644,7 +5649,7 @@ function askSentence(f,r){const n=r.length,w=['','One','Two','Three','Four','Fiv
   bits.push(n>1?`${coOf(r[0]).name} replies fastest`:`replies in ${coOf(r[0]).reply} days`);
   return [[`Got it. ${w} ${role} ${where},`,0],[bits.join(', ')+'.',1]];}
 function askWhy(x){const f=ASK.f,c=coOf(x),o=[];if(f.city&&x.loc===f.city)o.push(f.city);else if(x.loc==='Remote')o.push('Remote');if(f.mode&&x.type===f.mode&&f.mode!=='Remote')o.push(f.mode);if(f.min&&x.max>=f.min)o.push(`Up to ₹${x.max}L`);o.push(`Replies in ${c.reply}d · ${keptOf(c)}% on time`);return o;}
-function askCard(x,i){const c=coOf(x);return `<div class="ajc" role="button" tabindex="0" data-i="${i}" data-act="${x.real?'cjobopen':'extrole'}" ${x.real?`data-id="${x.id}"`:`data-co="${x.co}"`} style="z-index:${20-i}"><div class="ah">${coTile(c)}<span class="aco"><b>${esc(c.name)}</b><span>${esc(c.ind||'')} · ${esc(x.age||'')}</span></span><span class="apay"><b>${x.hide?'Pay hidden':`₹${x.min}–${x.max}L`}</b><span>${x.hide?'':'a year'}</span></span></div>
+function askCard(x,i){const c=coOf(x);return `<div class="ajc" role="button" tabindex="0" data-i="${i}" data-act="${x.real?'cjobopen':'cxopen'}" ${x.real?`data-id="${x.id}"`:`data-k="${esc(rKey(x))}"`} style="z-index:${20-i}"><div class="ah">${coTile(c)}<span class="aco"><b>${esc(c.name)}</b><span>${esc(c.ind||'')} · ${esc(x.age||'')}</span></span><span class="apay"><b>${x.hide?'Pay hidden':`₹${x.min}–${x.max}L`}</b><span>${x.hide?'':'a year'}</span></span></div>
   <div class="at">${esc(x.t)}</div><div class="ameta">${[x.loc,x.type&&x.type!==x.loc?x.type:'',x.exp].filter(Boolean).map(esc).join('<i></i>')}</div>
   <div class="awhy">${askWhy(x).map(w=>`<span>${AIC.check}${esc(w)}</span>`).join('')}</div></div>`;}
 function askStream(el,parts,cb){el.innerHTML='';const ws=[];parts.forEach(([t,m])=>t.split(' ').forEach(w=>{const s=document.createElement('span');s.className='aw'+(m?' am':'');s.textContent=w;el.appendChild(s);el.appendChild(document.createTextNode(' '));ws.push(s);}));
@@ -5765,4 +5770,60 @@ new MutationObserver(lab).observe(document.documentElement,{childList:true,subtr
 addMode();
 const _os=openSwitch;openSwitch=function(){_os();const r=document.querySelector('#sheetBody .rows');if(r&&!document.querySelector('#sheetBody [data-newcand]'))r.insertAdjacentHTML('beforebegin','<button class="lrow newcand" data-newcand="1"><span class="tile">'+ic('i-plus')+'</span><div><b>Apply as a new candidate</b><span class="sub">Start fresh: browse, sign up and apply</span></div><svg class="chev"><use href="#i-chev"/></svg></button>');};
 document.addEventListener('click',function(e){const t=e.target.closest&&e.target.closest('[data-newcand]');if(!t)return;e.preventDefault();e.stopPropagation();closeSheet();state.cAuth=false;state.mode='candidate';toast('Starting as a new candidate.');go('discover');},true);
-})();</script></html>
+})();</script><style>.cxnote{display:flex;gap:10px;align-items:flex-start;background:var(--card);border-radius:16px;padding:12px 14px;font-size:14px;line-height:1.5}
+.cxnote b{font-weight:600}.cxnote svg{width:18px;height:18px;flex:none;margin-top:2px}
+.cxoff{opacity:.38;cursor:not-allowed}
+@media (max-width:699px){.actions .cxoff{flex:0 0 92px!important}.actions .cxoff+.btn{font-size:15px;white-space:nowrap}}
+</style>
+<script>/* v2: example companies, roles and applications can be explored, but only Nimbus Pay takes applications */
+CV.push('cxjob');NAVMAP.cxjob='discover';NOTAB.push('cxjob');
+var CXDO={Design:['Own the design of one product area, from rough flows to shipped screens','Run quick tests with users and act on what you learn','Work closely with PMs and engineers through the build'],
+ Engineering:['Build and ship features end to end','Review code and keep the system healthy','Work with design and product on what to build next'],
+ Product:['Own the roadmap for one product area','Talk to customers and turn problems into clear specs','Track the numbers that matter and act on them'],
+ Research:['Plan and run interviews and usability tests','Turn findings into clear decisions for the team','Build a shared library of what users told us'],
+ Data:['Build dashboards the team actually uses','Answer business questions with SQL and Python','Keep data clean and definitions agreed'],
+ Operations:['Look after a set of customers day to day','Handle escalations and keep SLAs on track','Feed what customers say back to product']};
+var cxRole=function(){return EXT_ROLES.find(function(r){return rKey(r)===state.cx;})||EXT_ROLES[0];};
+var cxCo=function(id){return COS().find(function(c){return c.id===id;})||COS()[1];};
+var cxLive=function(label,cls){return `<button class="btn ${cls||'lime'}" data-act="cjobopen" data-id="pd2">${bl(label||'Try the live role')}</button>`;};
+var cxNote=function(t){return `<div class="cxnote">${ic('i-eye')}<span>${t}</span></div>`;};
+var cxRow=function(r){return `<button class="lrow st" data-act="cxopen" data-k="${esc(rKey(r))}"><span class="tile">${ic('i-bag')}</span><div><b>${esc(r.t)}</b><span class="sub">${esc(r.loc)} · ${esc(r.exp||'')} · ${r.hide?'Pay hidden':'₹'+r.min+'–'+r.max+' LPA'}</span></div><svg class="chev"><use href="#i-chev"/></svg></button>`;};
+R.cxjob=function(){var r=cxRole(),c=cxCo(r.co),more=EXT_ROLES.filter(function(x){return x.co===r.co&&x!==r;}).slice(0,4),sk=DSK[r.dept]||DSK.Design,dos=CXDO[r.dept]||CXDO.Design;
+  var act=`<button class="btn primary cxoff" data-act="cxapply" aria-disabled="true">${bl('Apply')}</button>${cxLive('Apply to Product Designer II')}`;
+  return `<section class="view has-head has-actions cjobv"><div class="head blue">
+    <div class="topnav"><button class="cbtn" data-act="go" data-v="discover" aria-label="Back"><svg><use href="#i-back"/></svg></button><span class="htag">${ic('i-eye')}Example role</span></div>
+    <div class="cohero">${coTile(c,true)}<div style="min-width:0"><p class="say" style="margin:0"><b>${esc(c.name)}</b></p><p class="cotag">${esc(c.ind||'')}</p></div></div>
+    <p class="say" style="color:rgba(255,255,255,.86)"><b>${esc(r.t)}</b> · ${esc(r.loc)} · <b>${r.hide?'Pay hidden':'₹'+r.min+'–'+r.max+' LPA'}</b></p>
+    <div class="meta" style="color:rgba(255,255,255,.9)"><span>${ic('i-bag')}${esc(r.exp||'')} · ${WTYPE[r.type]||esc(r.type||'Hybrid')}</span><span>${ic('i-clock')}Posted ${esc(r.age||'')}</span><span>${ic('i-clock')}Replies in ${c.reply} days</span></div>
+    <div class="hdact">${act}</div></div>
+  <div class="body"><div class="gside">
+    <div class="stack" style="gap:20px">
+      ${cxNote(`This is an example role. You can read it, but applying works only on <b>Product Designer II at Nimbus Pay</b>.`)}
+      <p style="font-size:16px;line-height:1.65">${esc(c.name)} is hiring a ${esc(r.t)} in ${esc(r.loc)}. You'll join a small team and own real work from your first month.</p>
+      <h2 class="tt">What you’ll do</h2><div class="rows" style="margin-top:-10px">${dos.map(function(d){return `<div class="lrow"><span class="tile">${ic('i-check')}</span><div><b style="white-space:normal">${d}</b></div></div>`;}).join('')}</div>
+      <h2 class="tt">What we look for</h2><div class="rows" style="margin-top:-10px">${sk.map(function(k){return `<div class="lrow"><span class="tile">${ic('i-check')}</span><div><b>${esc(k)}</b></div><span class="pill dark">Must have</span></div>`;}).join('')}</div>
+    </div>
+    <div class="stack">
+      <div class="lrow st">${coTile(c)}<div><b>${esc(c.name)}</b><span class="sub">${esc(c.size||'')} · ${esc(c.hq||'')}</span></div></div>
+      ${more.length?`<div class="card stack"><b class="small">More at ${esc(c.name)}</b><div class="rows">${more.map(cxRow).join('')}</div></div>`:''}
+    </div>
+  </div></div>
+  <div class="actions">${act}</div></section>`;};
+</script>
+<style>.cvbtn.sidesw{display:flex!important;position:fixed;z-index:85;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(88px + env(safe-area-inset-bottom,0px));white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+.cvbtn.sidesw.off{display:none!important}
+.cvbtn.sidesw.side{right:0;bottom:auto;top:44%;width:46px;height:46px;padding:0;justify-content:center;border-radius:14px 0 0 14px}.cvbtn.sidesw.side .lbl{display:none}
+</style>
+<script>
+function barGap(){var H=innerHeight,top=H;document.querySelectorAll('.actions,.panel.fixm,.fixm').forEach(function(el){if(!el.getClientRects().length)return;var cs=getComputedStyle(el);if(cs.position!=='fixed'&&cs.position!=='sticky')return;var r=el.getBoundingClientRect();if(r.top>0&&r.top<H&&r.bottom>=H-4)top=Math.min(top,r.top);});return Math.round(H-top+12)+(top===H?10:0);}
+/* mobile: switch sides, like the desktop sidebar button */
+(function(){var m=document.createElement('button');m.type='button';m.className='cvbtn sidesw off';
+  var add=function(){if(!document.body)return setTimeout(add,50);document.body.appendChild(m);};add();
+  m.onclick=function(e){e.stopPropagation();try{closeSheet();}catch(_){}if(state.mode==='recruiter'){state.cAuth=true;toCandidate();}else{state.rAuth=true;toRecruiter();}};
+  var last='';setInterval(function(){var sh=document.getElementById('sheet');
+    var hide=innerWidth>=700||['signin','rlogin','setup','cauth','noaccess'].includes(state.view)||(sh&&!sh.hidden)||document.getElementById('sizer');m.classList.toggle('off',!!hide);if(hide)return;
+    var tb=document.getElementById('tabbar'),away=!tb||tb.classList.contains('away')||!tb.getClientRects().length||getComputedStyle(tb).display==='none';
+    m.style.bottom=(away?barGap():88)+'px';
+    if(last!==state.mode){last=state.mode;var to=state.mode==='recruiter'?'Candidate':'Recruiter';m.classList.toggle('rec',state.mode==='candidate');m.setAttribute('aria-label','Switch to '+to.toLowerCase()+' view');m.innerHTML='<span class="cvdot"></span><span class="lbl">'+to+' view</span>';}},300);})();
+</script>
+</html>

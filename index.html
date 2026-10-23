@@ -2231,7 +2231,7 @@ let THEME='system';try{THEME=localStorage.getItem('lensTheme')||'system';}catch(
 function applyTheme(){const r=document.documentElement;if(THEME==='system')r.removeAttribute('data-theme');else r.setAttribute('data-theme',THEME);}
 applyTheme();
 const themeCard=()=>`<div class="card stack st"><b class="small">Appearance</b><div class="chips" role="group" aria-label="Appearance">${[['system','System'],['light','Light'],['dark','Dark']].map(([v,l])=>`<button class="chip" data-act="settheme" data-v="${v}" aria-pressed="${THEME===v}">${l}</button>`).join('')}</div><span class="xs muted">System follows your device${THEME==='system'?` · now ${matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}`:''}.</span></div>`;
-const lookIOS=()=>LOOK==='ios'||(LOOK==='auto'&&isApple());
+const lookIOS=()=>false;
 function applyLook(){document.documentElement.classList.toggle('ios',lookIOS());try{glassify();}catch(_){}}
 /* Liquid glass, built like the crumple project: each floating bar holds a copy of the page under it,
    and an SVG lens bends that copy at the rim. The lens is a normal CSS filter on an element (not a backdrop filter),

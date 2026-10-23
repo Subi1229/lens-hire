@@ -2242,7 +2242,7 @@ const LG_SEL='.tabbar,.toast,.nbanner,.bulkbar,.pop,'+LG_TOP;
 const DESK_MQ=matchMedia('(min-width:1024px) and (pointer:fine)');const DESK=()=>DESK_MQ.matches;
 const IS_WK=(()=>{const ua=navigator.userAgent||'';return /AppleWebKit/.test(ua)&&!/Chrome|Chromium|Edg\//.test(ua)||/iPhone|iPad|iPod|CriOS|FxiOS/.test(ua);})();
 const IS_APPLE=/Mac|iPhone|iPad|iPod/.test(navigator.platform||'')||/Macintosh|iPhone|iPad|iPod/.test(navigator.userAgent||'')||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.userAgent||''));
-const canRefract=!REDUCE&&!IS_WK&&!IS_APPLE&&!!(document.head&&document.head.attachShadow);
+const canRefract=!REDUCE&&!!(document.head&&document.head.attachShadow);
 let LG_CSS=null,LG_N=0;const LG=new Map();
 function lgCss(){if(LG_CSS!==null)return LG_CSS;const swap=s=>s.replace(/(^|[\s,>+~(])html(?=[\s.#\[:>+~,)]|$)/g,'$1.lgroot').replace(/:root\b/g,'.lgroot').replace(/(^|[\s,>+~(])body(?=[\s.#\[:>+~,)]|$)/g,'$1.lgbody');
   const idf=x=>x.replace(/#([A-Za-z][\w-]*)/g,'[data-lgid="$1"]');const walk=rules=>{let o='';for(const r of rules){if(r.selectorText!==undefined){o+=idf(swap(r.selectorText))+'{'+r.style.cssText+'}';}else if(r.cssRules&&r.conditionText!==undefined){o+=(r.media?'@media '+r.media.mediaText:'@supports '+r.conditionText)+'{'+walk(r.cssRules)+'}';}else if(!/^@font-face|^@import/.test(r.cssText))o+=r.cssText;}return o;};
@@ -2261,7 +2261,9 @@ function lgHost(el){let L=LG.get(el);if(L)return L;const host=document.createEle
   const root=document.createElement('div'),body=document.createElement('div'),lens=document.createElement('div');lens.className='lens';body.appendChild(lens);root.appendChild(body);sr.appendChild(root);
   L={el,host,sr,defs,root,body,lens,clone:null,pins:[],w:0,h:0,B:0,dirty:true};LG.set(el,L);return L;}
 function lgFilter(L,w,h,r){const B=Math.max(12,Math.min(26,h*.5)),id='lgf'+(++LG_N);L.B=B;L.w=w;L.h=h;
-  L.defs.innerHTML=`<filter id="${id}" x="0" y="0" width="${w+2*B}" height="${h+2*B}" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feImage href="${lgMap(w,h,r,B)}" x="0" y="0" width="${w+2*B}" height="${h+2*B}" preserveAspectRatio="none" result="m"/><feGaussianBlur in="SourceGraphic" stdDeviation="${IS_WK?1:.6}" result="b"/><feDisplacementMap in="b" in2="m" scale="${2*B}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+  const fx=`<filter id="${id}" x="0" y="0" width="${w+2*B}" height="${h+2*B}" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feImage href="${lgMap(w,h,r,B)}" x="0" y="0" width="${w+2*B}" height="${h+2*B}" preserveAspectRatio="none" result="m"/><feGaussianBlur in="SourceGraphic" stdDeviation="${IS_WK?1:.6}" result="b"/><feDisplacementMap in="b" in2="m" scale="${2*B}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+  L.defs.innerHTML=fx;let D=document.getElementById('lgDocDefs');if(!D){D=document.createElementNS('http://www.w3.org/2000/svg','svg');D.id='lgDocDefs';D.setAttribute('width','0');D.setAttribute('height','0');D.setAttribute('aria-hidden','true');D.style.cssText='position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';document.body.appendChild(D);}
+  if(L.docF)L.docF.remove();const t=document.createElementNS('http://www.w3.org/2000/svg','g');t.innerHTML=fx;L.docF=t.firstElementChild;D.appendChild(L.docF);
   L.lens.style.cssText=`left:${-B}px;top:${-B}px;width:${w+2*B}px;height:${h+2*B}px;filter:url(#${id});-webkit-filter:url(#${id})`;}
 function lgClone(L){const src=document.querySelector('.shell .main');if(!src)return;const he=document.documentElement;L.root.className='lgroot '+he.className;['data-theme','data-look'].forEach(a=>{he.hasAttribute(a)?L.root.setAttribute(a,he.getAttribute(a)):L.root.removeAttribute(a);});L.body.className='lgbody '+document.body.className;
   const c=src.cloneNode(true);c.classList.add('lgclone');if(c.id){c.setAttribute('data-lgid',c.id);c.removeAttribute('id');}c.querySelectorAll('[id]').forEach(n=>{n.setAttribute('data-lgid',n.id);n.removeAttribute('id');});
@@ -2280,7 +2282,7 @@ function lgSync(L){const el=L.el,cs=getComputedStyle(el),on=document.documentEle
   el.classList.toggle('lgx',vis);if(!vis){L.host.style.display='none';return;}
   const w=Math.round(b.width),h=Math.round(b.height);if(w!==L.w||h!==L.h)lgFilter(L,w,h,Math.min(parseFloat(cs.borderTopLeftRadius)||h/2,h/2,w/2));
   if(L.dirty||!L.clone)lgClone(L);const src=document.querySelector('.shell .main');if(!src||!L.clone)return;const m=src.getBoundingClientRect();
-  L.host.style.cssText=`display:block;position:fixed;left:${b.left}px;top:${b.top}px;width:${b.width}px;height:${b.height}px;border-radius:${cs.borderTopLeftRadius};overflow:hidden;pointer-events:none;z-index:${cs.zIndex==='auto'?0:cs.zIndex};opacity:${cs.opacity};contain:strict;-webkit-mask-image:-webkit-radial-gradient(white,black)`;
+  L.host.style.cssText=`display:block;position:fixed;left:${b.left}px;top:${b.top}px;width:${b.width}px;height:${b.height}px;border-radius:${cs.borderTopLeftRadius};overflow:hidden;pointer-events:none;z-index:${cs.zIndex==='auto'?0:cs.zIndex};opacity:${cs.opacity};contain:strict;-webkit-mask-image:-webkit-radial-gradient(white,black);-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7)`;
   L.clone.style.transform=`translate(${m.left-b.left+L.B}px,${m.top-b.top+L.B}px)`;
   for(const [o,k,nx,ny] of L.pins){const r=o.getBoundingClientRect();k.style.transform=`translate(${r.left-m.left-nx}px,${r.top-m.top-ny}px)`;}}
 let LG_RAF=0,LG_MO=null,LG_T=0;

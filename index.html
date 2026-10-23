@@ -3351,7 +3351,7 @@ R.interviews=()=>{const list=C.filter(x=>x.interview&&['interview','debrief'].in
   <div class="body">
     ${need.length?`<h2 class="tt">Waiting to book</h2><div class="rows" style="margin-top:-10px">${need.map(x=>`<div class="irow st"><span class="avatar">${initials(x.name)}</span><div class="info"><b style="font-weight:500">${esc(x.name)}</b><span class="xs muted" style="display:block">${offeredSlots(x.interview.panel,x.interview.len,x.interview)} slots · ${x.interview.panel.map(p=>first(P[p].n)).join(', ')}</span></div><div class="acts">${adm?'':'<!'+'--'}<button class="btn sm" data-act="remind" data-id="${x.id}" ${x.interview.reminded?'disabled':''}>${bl(x.interview.reminded?'Reminder sent':'Send reminder')}</button><button class="btn sm" data-act="sentmail" data-id="${x.id}" data-f="interview|book|slot">${ic('i-mail')}${bl('Booking email')}</button>${adm?'':'--'+'>'}</div></div>`).join('')}</div>`:''}
     <div class="row between"><h2 class="tt">Booked</h2>${dd?`<button class="btn sm" data-act="iday" data-d="${dd}">Show all</button>`:''}</div>
-    <div class="days" style="margin-top:-10px">${DAYS.map(d=>{const n=booked.filter(x=>x.interview.slot.d===d.d).length;return `<button class="day" data-act="iday" data-d="${d.d}" aria-pressed="${dd===d.d}"><span>${d.w}</span><b>${d.d}</b><em>${holOf(d.d)?'Holiday':n+' booked'}</em></button>`;}).join('')}</div>
+    <div class="days" style="margin-top:-10px">${DAYS.map(d=>{const n=booked.filter(x=>x.interview.slot.d===d.d).length;return `<button class="day${holOf(d.d)?' hol':''}" data-act="iday" data-d="${d.d}" aria-pressed="${dd===d.d}"><span>${d.w}</span><b>${d.d}</b><em>${holOf(d.d)?'Holiday':n+' booked'}</em></button>`;}).join('')}</div>
     <div class="rows">${shown.map(x=>{const iv=x.interview,miss=iv.panel.filter(p=>!(x.cards||{})[p]);
       const st=x.stage==='debrief'?pill('Debrief ready','var(--good)'):miss.length?pill('Scorecard due','var(--warn)'):'';
       return `<div class="irow st"><span class="tile cal d"><small>${slotLabel(iv.slot).split(' ')[0]}</small><b>${slotLabel(iv.slot).split(' ')[1]}</b></span><div class="info"><b style="font-weight:500">${esc(x.name)}</b><span class="xs muted" style="display:block">Round ${RI(x)+1} · ${esc(roundOf(x).name)} · ${slotLabel(iv.slot)} · ${iv.panel.map(p=>first(P[p].n)).join(', ')}</span></div>${st}<div class="acts">${x.stage==='debrief'?`<button class="btn sm" data-act="go" data-v="debrief" data-id="${x.id}">${bl('Open debrief')}</button>`:`${miss.length?`<button class="btn sm" data-act="go" data-v="score" data-id="${x.id}">${ic('i-clip')}${bl(miss.includes(state.me)?'Your scorecard':'Scorecards')}</button>`:''}${mv?'':`<button class="btn sm" data-act="askmove" data-id="${x.id}" ${(x.interview.askMove||{})[state.me]?'disabled':''}>${bl((x.interview.askMove||{})[state.me]?'Asked Neha':'Can’t make it')}</button>`}${mv?'':'<!'+'--'}<button class="btn sm" data-act="resched" data-id="${x.id}">${bl('Reschedule')}</button>${mv?'':'--'+'>'}`}</div></div>`;}).join('')||`<p class="small muted">${dd?`No interviews on ${dLab(dd)}.`:'No interviews booked yet.'}</p>`}</div>
@@ -5837,7 +5837,7 @@ function barGap(){var H=innerHeight,top=H;document.querySelectorAll('.actions,.p
   var add=function(){if(!document.body)return setTimeout(add,50);document.body.appendChild(m);};add();
   m.onclick=function(e){e.stopPropagation();try{closeSheet();}catch(_){}if(state.mode==='recruiter'){state.cAuth=true;toCandidate();}else{state.rAuth=true;toRecruiter();}};
   var last='';setInterval(function(){var sh=document.getElementById('sheet');
-    var hide=innerWidth>=700||['signin','rlogin','setup','cauth','noaccess'].includes(state.view)||(sh&&!sh.hidden)||document.getElementById('sizer');m.classList.toggle('off',!!hide);if(hide)return;
+    var hide=innerWidth>=700||!['home','jobs','notifs','rsettings','cand','interviews','offers','discover','capps','cmsgs','cnotifs','csettings','status','cbook','coffer','cfeedback'].includes(state.view)||(sh&&!sh.hidden)||document.getElementById('sizer');m.classList.toggle('off',!!hide);if(hide)return;
     var tb=document.getElementById('tabbar'),away=!tb||tb.classList.contains('away')||!tb.getClientRects().length||getComputedStyle(tb).display==='none';
     m.style.bottom=(away?barGap():88)+'px';
     if(last!==state.mode){last=state.mode;var to=state.mode==='recruiter'?'Candidate':'Recruiter';m.classList.toggle('rec',state.mode==='candidate');m.setAttribute('aria-label','Switch to '+to.toLowerCase()+' view');m.innerHTML='<span class="cvdot"></span><span class="lbl">'+to+' view</span>';}},300);})();
@@ -5852,4 +5852,12 @@ function barGap(){var H=innerHeight,top=H;document.querySelectorAll('.actions,.p
 (function(){var RE=/prototype|example role|example from another company|only on product designer ii/i,orig=toast;
   toast=function(m){orig(m);var t=document.getElementById('toast');if(!t)return;var p=RE.test(String(m));t.classList.toggle('proto',p);if(p){t.innerHTML='<span class="ptag">Prototype note</span>';t.appendChild(document.createTextNode(String(m)));}};})();
 </script>
+<style>:root{--hol:#A3232B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--hol:#E0626A}}
+:root[data-theme="dark"]{--hol:#E0626A}
+.day.hol,.day.hol:disabled,.day.hol[disabled]{opacity:1}
+.day.hol span,.day.hol b{color:var(--muted)!important;opacity:.55}
+.day.hol em{color:var(--hol)!important;font-weight:600;opacity:1}
+.day.hol::after{background:var(--hol)!important}
+</style>
 </html>
